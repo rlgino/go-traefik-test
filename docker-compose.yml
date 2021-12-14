@@ -1,0 +1,53 @@
+version: '3.7'
+services:
+  traefik:
+    image: traefik:v1.7.2-alpine
+    command: --web --docker --docker.domain=docker.localhost --logLevel=DEBUG
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    networks:
+      - traefik_public
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.toml:/traefik.toml
+      - ./traefik/acme.json:/acme.json
+    labels:
+      - "traefik.frontend.rule=Host:traefik.rlgino.io"
+      - "traefik.port=8080"
+    container_name: traefik
+    restart: always
+
+  backend:
+    build: ./backend/.
+    expose:
+      - 8080
+    networks:
+      - traefik_public
+    restart: always
+    mem_limit: 1000m
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_public"
+      - "traefik.engine.healthcheck.path=/health"
+      - "traefik.engine.healthcheck.interval=10s"
+      - "traefik.engine.backend=engine"
+      - "traefik.engine.frontend.rule=Host:backend.taefik.rlgino.io;PathPrefixStrip: /api/"
+      - "traefik.port=8080"
+
+  frontend:
+    build: ./frontend/.
+    container_name: webserver
+    networks:
+      - traefik_public
+    labels:
+      - traefik.web.frontend.rule=Host:frontend.taefik.rlgino.io
+      - traefik.docker.network=traefik_public
+      - traefik.port=80
+    restart: unless-stopped
+    tty: true
+
+networks:
+  traefik_public:
+    external: true

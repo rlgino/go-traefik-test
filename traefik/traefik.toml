@@ -1,0 +1,36 @@
+debug = false
+logLevel = "ERROR"
+defaultEntryPoints = ["http", "https"]
+[web]
+# Port for the status/dashboard page admin admin
+address = ":8080"
+[entryPoints]
+  [entryPoints.dashboard]
+    address = ":8080"
+    [entryPoints.dashboard.auth]
+      [entryPoints.dashboard.auth.basic]
+        users = ["admin:$apr1$mtqSueNI$sJCa86Woz7Zemb8j4IzpS/"]
+
+    [api]
+        entrypoint="dashboard"
+    [entryPoints.http]
+        address = ":80"
+            [entryPoints.http.redirect]
+                entryPoint = "https"
+    [entryPoints.https]
+        address = ":443"
+            [entryPoints.https.tls]
+[retry]
+[docker]
+endpoint = "unix:///var/run/docker.sock"
+domain = "taefik.rlgino.io" # Replace this with your traefik subdomain
+watch = true
+exposedByDefault = false
+network = "traefik_public"
+[acme]
+email = "gino.luraschi@gmail.com" # Replace this with your email address
+storage = "acme.json"
+entryPoint = "https"
+onHostRule = true
+    [acme.httpChallenge]
+    entryPoint = "http"
